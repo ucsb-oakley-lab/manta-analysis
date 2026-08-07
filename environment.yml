@@ -1,0 +1,11 @@
+name: manta
+
+channels:
+  - conda-forge
+
+dependencies:
+  - python=3.11
+  - pip
+  - ipykernel
+  - pip:
+      - -e .
