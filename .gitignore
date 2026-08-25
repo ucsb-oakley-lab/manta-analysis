@@ -7,5 +7,6 @@ __pycache__/
 *.npz
 data/raw/*
 data/processed/*
+data/selected_videos/*
 !data/raw/.gitkeep
 !data/processed/.gitkeep
