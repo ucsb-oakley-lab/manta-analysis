@@ -59,4 +59,34 @@ python -m pip install -e .
 
 ## Origin
 
-This repository is a cleaned teaching adaptation of calibration experiments from the WALL-E project. It intentionally excludes the later bioluminescent-pulse detection workflow.
+This repository began as a cleaned teaching adaptation of calibration experiments from the WALL-E project. It now also includes the physiology pulse-discovery workflow described below.
+
+## Physiology pulse discovery — Bocas 2026
+
+[The physiology discovery notebook](notebooks/physiology_pulse_discovery_Bocas2026.ipynb)
+searches editable vessel regions at native resolution for nearly stationary light
+events. It saves frame/blob CSVs, candidate durations, fixed-site intensity traces,
+and a short list of cropped review videos. Start with the local pilot, inspect the
+provisional vessel-group outlines, then use the small time-spread Box batch.
+Candidates and recurrent fiber associations require visual review; they are not
+confirmed bioluminescence. Results are stored under
+`data/processed/physiology_pulse_discovery_Bocas2026/`.
+
+For the detailed full-night pass on the 2026-08-31 and 2026-09-02 observation
+nights, use the resumable runner. It inventories the shared Box folder,
+calibrates the fixed vessel regions from representative recordings, then
+downloads and scans one recording at a time:
+
+```bash
+python scripts/physiologyFullNights.py inventory
+python scripts/physiologyFullNights.py prepare
+python scripts/physiologyFullNights.py run --workers 8
+```
+
+The live report and per-video blob tables are written to
+`data/processed/physiology_full_nights_Bocas2026/`. The strict train search
+requires at least three separate, sustained pulses with a net downward path;
+exploratory train tables are retained separately for tuning.
+
+Run the detector checks in the `manta` environment with
+`python -m unittest discover -s tests -v`.
