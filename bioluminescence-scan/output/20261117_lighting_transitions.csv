@@ -1,0 +1,2 @@
+night,lights_off_detected,lights_off_video,lights_off_video_sec,lights_off_elapsed_sec,lights_off_brightness_change,lights_off_confidence,lights_on_detected,lights_on_video,lights_on_video_sec,lights_on_elapsed_sec,lights_on_brightness_change,lights_on_confidence,method
+20261117,True,/Volumes/oakley_lab/aquarium/2026Pan/20261117/20261118T015509Z_436271c4_001.mp4,315.188,315.188,-15.0,0.3,False,,,,,0.0,median grayscale change across fixed frame reference area

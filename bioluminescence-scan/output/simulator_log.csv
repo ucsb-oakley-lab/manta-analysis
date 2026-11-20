@@ -1,0 +1,2 @@
+actual_check_time,simulator_time_at_check,simulator_latitude,simulator_longitude,simulator_timezone,simulator_runs_continuously,location_description,notes
+2026-11-18T15:28:00-08:00,2026-11-18 15:28:00,0.000,-82.250,America/Panama,true,equator at Panama longitude,"Initial settings reported by user; simulator clock runs continuously at real-time speed"
