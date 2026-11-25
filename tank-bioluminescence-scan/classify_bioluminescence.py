@@ -10,7 +10,9 @@ morphology, and short-term spatial persistence.
 from __future__ import annotations
 
 import argparse
+import os
 import re
+import tempfile
 from pathlib import Path
 
 import cv2
@@ -21,6 +23,20 @@ from moon_state import add_moon_state_metadata
 
 
 TIMESTAMP_RE = re.compile(r"20\d{6}T\d{6}Z")
+ARTIFACT_ROI_NORMALIZED = (0.05, 0.50, 0.08, 0.65)
+CAMERA_WIDTH = 1920
+CAMERA_HEIGHT = 1080
+SAND_REGION_FIELDS = [
+    "night",
+    "label",
+    "area_pixels",
+    "bbox_x",
+    "bbox_y",
+    "bbox_width",
+    "bbox_height",
+    "centroid_x",
+    "centroid_y",
+]
 
 
 def timestamp_key(value: str) -> tuple[int, str]:
@@ -91,6 +107,10 @@ def save_sand_regions(mask: np.ndarray, night: str, output_dir: Path) -> list[di
         )
     cv2.imwrite(str(output_dir / f"sand_mask_{night}.png"), mask)
     return regions
+
+
+def write_sand_regions(regions: list[dict[str, object]], output_path: Path) -> None:
+    pd.DataFrame(regions, columns=SAND_REGION_FIELDS).to_csv(output_path, index=False)
 
 
 def build_reference(
@@ -181,7 +201,38 @@ def classify(
         ["sand reference + persistence/brightness/morphology", "bright, saturated, compact pulse despite spatial persistence"],
         default="mixed or insufficient evidence",
     )
+    x0, y0, x1, y1 = (
+        int(CAMERA_WIDTH * ARTIFACT_ROI_NORMALIZED[0]),
+        int(CAMERA_HEIGHT * ARTIFACT_ROI_NORMALIZED[1]),
+        int(CAMERA_WIDTH * ARTIFACT_ROI_NORMALIZED[2]),
+        int(CAMERA_HEIGHT * ARTIFACT_ROI_NORMALIZED[3]),
+    )
+    artifact = (
+        result["x"].ge(x0)
+        & result["x"].lt(x1)
+        & result["y"].ge(y0)
+        & result["y"].lt(y1)
+    )
+    result.loc[artifact, "classification"] = "excluded_artifact"
+    result.loc[artifact, "classification_reason"] = "fixed out-of-tank artifact ROI"
     return result
+
+
+def write_classified_csv(df: pd.DataFrame, output_path: Path) -> None:
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    temp_path: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w", encoding="utf-8", dir=output_path.parent,
+            prefix=f".{output_path.name}.", suffix=".tmp", delete=False,
+        ) as temp_file:
+            temp_path = Path(temp_file.name)
+        df.to_csv(temp_path, index=False)
+        os.replace(temp_path, output_path)
+        temp_path = None
+    finally:
+        if temp_path is not None:
+            temp_path.unlink(missing_ok=True)
 
 
 def main() -> None:
@@ -206,9 +257,8 @@ def main() -> None:
     reference_output.mkdir(parents=True, exist_ok=True)
     masks, reference_grays, regions = build_reference(df, reference_output)
     result = classify(df, masks, reference_grays, args.min_track_span)
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    result.to_csv(args.output, index=False)
-    pd.DataFrame(regions).to_csv(reference_output / "sand_regions.csv", index=False)
+    write_sand_regions(regions, reference_output / "sand_regions.csv")
+    write_classified_csv(result, args.output)
     print(f"Wrote {len(result)} classified detections to {args.output}")
     print(f"Wrote {len(regions)} sand reference regions to {reference_output / 'sand_regions.csv'}")
     print(result["classification"].value_counts(dropna=False).to_string())

@@ -12,6 +12,7 @@ dependencies = [
   "numpy>=1.24",
   "opencv-python>=4.8",
   "pandas>=2.0",
+  "astral",
 ]
 
 [tool.setuptools.packages.find]

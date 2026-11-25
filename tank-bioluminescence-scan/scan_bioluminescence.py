@@ -34,6 +34,8 @@ import cv2
 import numpy as np
 import pandas as pd
 
+from nightly_bioluminescence import default_nas_output_dir
+
 VIDEO_EXTS = {".mp4", ".avi", ".mov", ".mkv", ".mts", ".wmv", ".m4v", ".ts"}
 TIMESTAMP_RE = re.compile(r"20\d{6}T\d{6}Z")
 LEGACY_NUMBER_RE = re.compile(r"(?:output|video)[_-]?(\d+)", re.IGNORECASE)
@@ -662,7 +664,10 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Scan video folders for bioluminescent events.")
     parser.add_argument("input_path", nargs="?", default=None, help="Folder containing videos or a mounted SMB path, e.g. /Volumes/oakley_lab/...")
     parser.add_argument("--video", help="Optional path to a single video file to inspect; this is useful for checking positive-control clips like output4.")
-    parser.add_argument("--output", default="./bioluminescence_scan", help="Output folder for CSV and optional thumbnails.")
+    parser.add_argument(
+        "--output",
+        help="Output folder for CSV and optional thumbnails (default: Oakley NAS).",
+    )
     parser.add_argument("--sample-rate-hz", type=float, default=2.5, help="Sample frames at this rate.")
     parser.add_argument("--black", type=int, default=110, help="Pixel intensity threshold for candidate blobs.")
     parser.add_argument("--min-area", type=float, default=1.5, help="Minimum contour area in pixels.")
@@ -736,7 +741,13 @@ def main() -> int:
     else:
         input_path = None
 
-    output_dir = Path(args.output)
+    try:
+        output_dir = (
+            Path(args.output).expanduser() if args.output else default_nas_output_dir()
+        )
+    except FileNotFoundError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 2
     output_dir.mkdir(parents=True, exist_ok=True)
 
     if args.video:

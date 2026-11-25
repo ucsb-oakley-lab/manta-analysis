@@ -106,6 +106,7 @@ def add_moon_state_metadata(df: pd.DataFrame, simulator_log: Path) -> pd.DataFra
     )
     result["simulator_latitude"] = np.nan
     result["simulator_longitude"] = np.nan
+    result["simulator_timezone"] = anchor.simulator_timezone
     result["sun_altitude_deg"] = np.nan
     result["moon_altitude_deg"] = np.nan
     result["moon_azimuth_deg"] = np.nan
